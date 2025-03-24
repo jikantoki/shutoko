@@ -1,8 +1,8 @@
 <template lang="pug">
 .wait
   .wait-wrap(style="background:rgb(var(--v-theme-background));")
-    img.splash-img(src="/img/icon512.png")
-    p.text-h4.splash-text Nuxt
+    //img.splash-img(src="/img/icon512.png")
+    p.text-h4.splash-text Shutoko
     .ma-16
     loading
 </template>

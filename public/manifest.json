@@ -1,6 +1,6 @@
 {
-  "short_name": "NuxTemp",
-  "name": "Nuxt Template",
+  "short_name": "Shutoko",
+  "name": "Shutoko",
   "display": "standalone",
   "display_override": ["standalone"],
   "lang": "ja-JP",
@@ -39,18 +39,7 @@
           "size": "32x32"
         }
       ]
-    },
-    {
-      "name": "About",
-      "description": "このアプリについて",
-      "url": "/about",
-      "icons": [
-        {
-          "src": "/img/favicon.ico",
-          "size": "32x32"
-        }
-      ]
     }
   ],
-  "description": "簡単にNuxt.jsを使用するチュートリアルパッケージ"
+  "description": "都市高速をドライブするゲーム"
 }

@@ -2,19 +2,13 @@
  * ここに記述したものはVueの機能として使える
  * しかもどのファイルでも読み込める
  */
-
-//import router from '~/router/router'
-import adsense from '~/components/common/commonAdsense'
 import ajaxFunctions from '~/js/ajaxFunctions'
 import PackageJson from '/package.json'
 import Functions from '~/js/Functions'
 import ContentLoader from '~/components/LoadingText'
-import { useCommonBarStore } from '~/composables/commonBar'
-import { useThemeStore } from '~/composables/theme'
 
 export default {
   components: {
-    adsense: adsense,
     ContentLoader: ContentLoader,
   },
   data() {
@@ -24,10 +18,8 @@ export default {
       envconf: useRuntimeConfig(),
       env: null,
       counter: useCounterStore(),
-      metaStore: useMetaStore(),
       userStore: useUserStore(),
       localeStore: useLocaleStore(),
-      commonBarStore: useCommonBarStore(),
       nowTheme: useThemeStore(),
     }
   },
@@ -226,31 +218,6 @@ export default {
       }, 1500)
       useMetaStore().setTitle(newTitle)
       return returnCode
-    },
-    /**
-     * アカウントのプロフィールを取得
-     * @param {string} userId 欲しいユーザーのID
-     * @returns アカウントの公開情報
-     */
-    async getProfile(userId) {
-      const profile = await this.sendAjaxWithAuth('/getProfile.php', {
-        id: userId,
-      })
-      const res = profile.body.res
-      if (res) {
-        return {
-          userId: res.userId !== '' ? res.userId : null,
-          createdAt: res.createdAt !== '' ? res.createdAt : null,
-          status: res.status !== '' ? res.status : null,
-          icon: res.icon !== '' ? res.icon : null,
-          coverImg: res.coverImg !== '' ? res.coverImg : null,
-          name: res.name !== '' ? res.name : null,
-          message: res.message !== '' ? res.message : null,
-        }
-      } else {
-        //存在しない
-        return null
-      }
     },
     /**
      * 言語切替

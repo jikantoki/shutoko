@@ -1,51 +1,16 @@
 <template lang="pug">
 .v-app-main-application#nuxt
   splash(v-show="splash")
-  v-app.wrap100vh#nuxt(ontouchstart="" style="min-height: 100vh!important;width:100vw" :style="style")
-    header
-      common-header
-    v-main#main
-      .center.main-content
-        router-view
-      common-bar(
-        v-if="!userStore.userId"
-        title="ログインして、もっと便利に"
-        subTitle="NuxTempにログインし、通知の挙動をチェックしてみよう"
-        :buttons="commonBarButtons"
-        )
-      common-bar(
-        v-if="userStore.userId && isDisplayCommonPushButtons"
-        title="最新の情報を入手しよう"
-        subTitle="通知の送信を許可することで、最新情報を入手できます。"
-        :buttons="commonBarPushButtons"
-        @clicked="pushFlow()"
-        )
-      footer.pa-16#footer
-        common-footer
-  v-dialog(v-model="dialog" max-width="500")
-    v-card
-      v-card-title {{ dialogTitle }}
-      v-card-text(v-html="dialogText")
-      v-card-actions(v-if="dialogActions")
-        v-spacer
-        v-btn(
-          v-for="btn, key in dialogActions"
-          :key="key"
-          @click="btn.action()"
-          v-bind:class="[key === dialogActions.length - 1 ? 'btn-default' : 'btn-other']"
-          ) {{ btn.value }}
-  .right-space(style="min-height: 100vh")
+  v-app
+    nuxt-page
 </template>
 
 <script>
 import PackageJson from '/package.json'
 import Functions from '~/js/Functions'
-import commonHeader from '~/components/common/commonHeader'
-import commonFooter from '~/components/common/commonFooter'
 import mixins from '~/mixins/mixins'
 import webpush from '~/js/webpush'
 import splash from '~/components/common/commonSplash'
-import commonBar from '~/components/common/commonBar.vue'
 
 export default {
   /**
@@ -56,10 +21,7 @@ export default {
    * 使いたいvueファイルを記述
    */
   components: {
-    commonHeader: commonHeader,
-    commonFooter: commonFooter,
     splash: splash,
-    commonBar: commonBar,
   },
   mixins: [mixins],
   /**
@@ -71,28 +33,6 @@ export default {
      */
     return {
       splash: true,
-      style: 'opacity: 0;',
-      isDisplayCommonPushButtons: false,
-      commonBarButtons: [
-        {
-          title: 'ログイン',
-          href: '/login',
-        },
-        {
-          title: 'アカウント作成',
-          href: '/registar',
-        },
-      ],
-      commonBarPushButtons: [
-        {
-          title: '通知を許可',
-          return: 'allowPush',
-        },
-      ],
-      dialog: false,
-      dialogTitle: null,
-      dialogText: null,
-      dialogActions: null,
     }
   },
   /**
@@ -102,37 +42,8 @@ export default {
   /**
    * ページ生成時にやりたい事
    */
-  created() {
-    this.$vuetify.theme.global.name = 'dark'
-  },
+  created() {},
   mounted() {
-    PackageJson.name = Functions.ifEnglishStartUpper(PackageJson.name)
-    /*
-      this.sendAjax('/api/test/object.html', {
-        goodbye: 'バイバ～イ!yeah',
-        sayMeow: 'みゃお'
-      })
-        .then((value) => {
-          console.log(value)
-        })
-        .catch((e) => {
-          console.warn(e)
-        })
-      this.sendAjax('/api/test/string.html')
-        .then((value) => {
-          console.log(value)
-        })
-        .catch((e) => {
-          console.warn(e)
-        })
-      */
-    webpush
-      .set()
-      .then((e) => {})
-      .catch((e) => {
-        this.isDisplayCommonPushButtons = true
-      })
-
     /**
      * mountedの最後に記述
      */
@@ -148,62 +59,7 @@ export default {
   /**
    * このファイル内で使いたい変数
    */
-  methods: {
-    async pushFlow() {
-      const res = await this.getRequest()
-      if (res) {
-        this.isDisplayCommonPushButtons = false
-      }
-      return res
-    },
-    async getRequest() {
-      console.log('a')
-      const webPush = await webpush.get(true)
-      console.log('b')
-      if (webPush) {
-        this.dialogTitle = 'ありがとうございます！'
-        this.dialogText = 'プッシュ通知の許可に成功しました。'
-        this.dialogActions = [
-          {
-            value: '閉じる',
-            action: () => {
-              this.dialog = false
-            },
-          },
-        ]
-        this.dialog = true
-        return webPush
-      } else {
-        if (webPush === undefined) {
-          this.dialogTitle = 'リクエスト失敗'
-          this.dialogText =
-            'ブラウザによって通知へのリクエストが拒否されています。'
-          this.dialog = true
-          this.dialogActions = [
-            {
-              value: '閉じる',
-              action: () => {
-                this.dialog = false
-              },
-            },
-          ]
-        } else {
-          this.dialogTitle = 'リクエスト失敗'
-          this.dialogText = `プッシュ通知の許可は、ブラウザから行う必要があります。\nこの端末で <span class="allow-select-all underline">https://${location.host}</span> にアクセスしてください。`
-          this.dialog = true
-          this.dialogActions = [
-            {
-              value: '閉じる',
-              action: () => {
-                this.dialog = false
-              },
-            },
-          ]
-        }
-        return null
-      }
-    },
-  },
+  methods: {},
 }
 </script>
 

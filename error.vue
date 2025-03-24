@@ -2,7 +2,7 @@
 .error-page
   .center
     .card
-      img.logo-img(src="/icon.png")
+      //img.logo-img(src="/icon.png")
       v-card-title.title Error {{ error.statusCode }}
       v-card-subtitle {{ error.message }}
       v-card-text

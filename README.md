@@ -1,4 +1,14 @@
-# Nuxt3 Template
+# Shutoko!
+
+都市高速をドライブするゲーム
+
+## 開発環境
+
+- Node.js（迫真）
+
+以下テンプレートのreadme
+
+## Nuxt3 Template
 
 Nuxtを簡単にインストールしてすぐ使うためのテンプレート
 
