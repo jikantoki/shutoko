@@ -1,5 +1,5 @@
 <template lang="pug">
-  h1 Hello World!
+  three
 </template>
 
 <script>
@@ -10,9 +10,12 @@ import mixins from '~/mixins/mixins'
 import webpush from '~/js/webpush'
 import metaFunctions from '~/js/metaFunctions'
 import Setup from '~/js/setup'
+import three from '~/components/three.vue'
 export default {
   name: 'index',
-  components: {},
+  components: {
+    three,
+  },
   mixins: [mixins],
   setup() {},
   data() {

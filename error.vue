@@ -5,6 +5,7 @@
       //img.logo-img(src="/icon.png")
       v-card-title.title Error {{ error.statusCode }}
       v-card-subtitle {{ error.message }}
+      p {{ error.stack }}
       v-card-text
         span ごめんエラーページ出ちった
       v-card-actions
@@ -58,7 +59,7 @@ body {
   --border-radius: 16px;
 }
 * {
-  user-select: none;
+  user-select: text;
   list-style: none;
   transition: all 0.14s;
   font-family: $font !important;
