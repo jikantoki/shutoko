@@ -75,9 +75,9 @@ export default {
       vehicle: true,
       mass: 1000, // 車の質量を設定
       position: new CANNON.Vec3(0, 4.5, 5),
-      shape: new CANNON.Box(new CANNON.Vec3(3.8, 1.8, 1.0)), // 車の形状を箱型に設定
+      shape: new CANNON.Box(new CANNON.Vec3(3.8, 2.5, 1.4)), // 車の形状を箱型に設定
       mesh: new THREE.Mesh(
-        new THREE.BoxGeometry(3.8, 1.8, 1.0),
+        new THREE.BoxGeometry(3.8, 2.5, 1.4),
         new THREE.MeshStandardMaterial({
           color: 0x0000ff,
           transparent: true,
