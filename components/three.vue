@@ -7,7 +7,6 @@
 <script>
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
-import { damp } from 'three/src/math/MathUtils'
 
 export default {
   data() {
@@ -24,7 +23,18 @@ export default {
 
     // CANNON.jsの初期化
     const world = new CANNON.World()
-    world.gravity.set(0, -9.82, 0) // 重力を設定
+    world.gravity.set(0, 0, -9.82) // 重力を設定
+    world.addContactMaterial(
+      new CANNON.ContactMaterial(
+        new CANNON.Material('groundMaterial'),
+        new CANNON.Material('wheelMaterial'),
+        {
+          friction: 0.3, // 摩擦係数
+          restitution: 0, // 反発係数
+          contactEquationStiffness: 1000, // 接触方程式の剛性
+        },
+      ),
+    )
 
     /** 物体のリスト */
     const objectList = []
@@ -34,12 +44,12 @@ export default {
       name: 'ground',
       mass: 0, // 地面は動かないので質量は0
       position: new CANNON.Vec3(0, 0, 0),
-      shape: new CANNON.Box(new CANNON.Vec3(10, 0.01, 10)), // 地面の形状
+      shape: new CANNON.Box(new CANNON.Vec3(10, 10, 0.01)), // 地面の形状
       material: new CANNON.Material({
         restitution: 0.5, // 反発係数
       }),
       mesh: new THREE.Mesh(
-        new THREE.BoxGeometry(20, 0.02, 20),
+        new THREE.BoxGeometry(20, 20, 0.02),
         new THREE.MeshStandardMaterial({
           color: 0x00ff00,
           transparent: true,
@@ -53,7 +63,7 @@ export default {
     const Sphere = {
       name: 'sphere',
       mass: 10, // 質量を設定
-      position: new CANNON.Vec3(0, 10, 0), // 初期位置を設定
+      position: new CANNON.Vec3(0, 0, 10), // 初期位置を設定
       shape: new CANNON.Sphere(0.5), // 球体の半径を0.5に設定
       material: new CANNON.Material({
         restitution: 1, // 反発係数
@@ -74,7 +84,7 @@ export default {
       name: 'car',
       vehicle: true,
       mass: 1000, // 車の質量を設定
-      position: new CANNON.Vec3(0, 4.5, 5),
+      position: new CANNON.Vec3(0, 5, 4.5),
       shape: new CANNON.Box(new CANNON.Vec3(3.8, 2.5, 1.4)), // 車の形状を箱型に設定
       mesh: new THREE.Mesh(
         new THREE.BoxGeometry(3.8, 2.5, 1.4),
@@ -85,7 +95,7 @@ export default {
         }),
       ),
       wheelOptions: {
-        radius: 0.5, // 車輪の半径を0.5に設定
+        radius: 0.4, // 車輪の半径を設定
         directionLocal: new CANNON.Vec3(0, 0, -1), // 車輪の方向を設定
         suspensionStiffness: 50, // サスペンションの剛性を設定
         suspensionRestLength: 0.5, // サスペンションの初期長さを設定
@@ -101,101 +111,105 @@ export default {
         useCustomSlidingRotationalSpeed: true, // カスタム回転速度を使用
       },
     }
+
     objectList.push(car)
 
     //objectListから生成した、bodyとmeshのリスト
     const bodyMeshList = []
 
-    let i = 0
-    for (const object of objectList) {
-      /** CANNON.jsの物理ボディを作成 */
-      const body = this.createBody(object)
+    /**
+     * 物体を追加する関数
+     * @param {Array} objectList - 物体のリスト
+     */
+    const addObjects = (objectList) => {
+      let i = 0
+      for (const object of objectList) {
+        /** CANNON.jsの物理ボディを作成 */
+        const body = this.createBody(object)
 
-      /** THREE.jsのメッシュを作成 */
-      const mesh = object.mesh
-      mesh.position.copy(body.position)
-      mesh.quaternion.copy(body.quaternion)
+        /** THREE.jsのメッシュを作成 */
+        const mesh = object.mesh
+        mesh.position.copy(body.position)
+        mesh.quaternion.copy(body.quaternion)
 
-      /** ホイール情報リスト */
-      const wheelInfoArray = []
+        /** ホイール情報リスト */
+        const wheelInfoArray = []
 
-      //車両オブジェクトの場合の設定
-      if (object.vehicle) {
-        const raycastVehicle = new CANNON.RaycastVehicle({
-          chassisBody: body, // 車体の物理ボディを設定
-        })
-        object.wheelOptions.chassisConnectionPointLocal.set(1, 1, 0)
-        raycastVehicle.addWheel(object.wheelOptions)
-        object.wheelOptions.chassisConnectionPointLocal.set(1, -1, 0)
-        raycastVehicle.addWheel(object.wheelOptions)
-        object.wheelOptions.chassisConnectionPointLocal.set(-1, 1, 0)
-        raycastVehicle.addWheel(object.wheelOptions)
-        object.wheelOptions.chassisConnectionPointLocal.set(-1, -1, 0)
-        raycastVehicle.addWheel(object.wheelOptions)
-
-        raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
-
-        //ホイールを1つずつ追加
-        for (let j = 0; j < raycastVehicle.wheelInfos.length; j++) {
-          const wheel = raycastVehicle.wheelInfos[j]
-          const wheelBody = new CANNON.Body({
-            mass: 1, // 車輪の質量を設定
+        //車両オブジェクトの場合の設定
+        if (object.vehicle) {
+          const raycastVehicle = new CANNON.RaycastVehicle({
+            chassisBody: body, // 車体の物理ボディを設定
           })
-          const q = new CANNON.Quaternion() // 車輪の回転を設定するためのクォータニオン
-          q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2) // 車輪を横向きにするための回転
-          wheelBody.addShape(
-            new CANNON.Cylinder(
-              wheel.radius,
-              wheel.radius,
-              wheel.radius, // 車輪の高さを設定
-              20, // サイドの数を設定
-            ),
-            new CANNON.Vec3(), // 車輪の位置を設定
-            q, // 車輪の回転を設定
-          )
-          const wheelMesh = new THREE.Mesh(
-            new THREE.CylinderGeometry(
-              wheel.radius,
-              wheel.radius,
-              wheel.radius, // 車輪の高さを設定
-              20, // サイドの数を設定
-            ),
-            new THREE.MeshStandardMaterial({
-              color: 0x000000,
-              transparent: true,
-              opacity: 0.75,
-            }),
-          )
-          wheelInfoArray.push({
-            body: wheelBody,
-            mesh: wheelMesh,
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, 1.3, 0) //車幅はここで設定する
+          raycastVehicle.addWheel(object.wheelOptions)
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -1.3, 0)
+          raycastVehicle.addWheel(object.wheelOptions)
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, 1.3, 0)
+          raycastVehicle.addWheel(object.wheelOptions)
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -1.3, 0)
+          raycastVehicle.addWheel(object.wheelOptions)
+
+          raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
+
+          //ホイールを1つずつ追加
+          for (let j = 0; j < raycastVehicle.wheelInfos.length; j++) {
+            const wheel = raycastVehicle.wheelInfos[j]
+            const wheelBody = new CANNON.Body({
+              mass: 1, // 車輪の質量を設定
+            })
+            const q = new CANNON.Quaternion() // 車輪の回転を設定するためのクォータニオン
+            q.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2) // 車輪を横向きにするための回転
+            wheelBody.addShape(
+              new CANNON.Cylinder(
+                wheel.radius,
+                wheel.radius,
+                0.3, // 車輪の幅
+                10, // クオリティ
+              ),
+              new CANNON.Vec3(), // 車輪の位置を設定
+              q, // 車輪の回転を設定
+            )
+            const wheelMesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(wheel.radius, wheel.radius, 0.3, 10),
+              new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.75,
+              }),
+            )
+            wheelInfoArray.push({
+              body: wheelBody,
+              mesh: wheelMesh,
+            })
+            scene.add(wheelMesh)
+          }
+
+          // 車両のホイールの位置と回転を更新
+          world.addEventListener('postStep', () => {
+            for (let j = 0; j < wheelInfoArray.length; j++) {
+              raycastVehicle.updateWheelTransform(j)
+              const t = raycastVehicle.wheelInfos[j].worldTransform
+              const info = wheelInfoArray[j]
+              info.body.position.copy(t.position)
+              info.body.quaternion.copy(t.quaternion)
+            }
           })
-          scene.add(wheelMesh)
         }
 
-        // 車両のホイールの位置と回転を更新
-        world.addEventListener('postStep', () => {
-          for (let j = 0; j < wheelInfoArray.length; j++) {
-            raycastVehicle.updateWheelTransform(j)
-            const t = raycastVehicle.wheelInfos[j].worldTransform
-            const info = wheelInfoArray[j]
-            info.body.position.copy(t.position)
-            info.body.quaternion.copy(t.quaternion)
-          }
+        bodyMeshList.push({
+          body: body,
+          mesh: mesh,
+          isVehicle: object.vehicle,
+          wheelInfoArray: object.vehicle ? wheelInfoArray : null,
         })
+        world.addBody(bodyMeshList[i].body)
+        scene.add(bodyMeshList[i].mesh)
+
+        i++
       }
-
-      bodyMeshList.push({
-        body: body,
-        mesh: mesh,
-        isVehicle: object.vehicle,
-        wheelInfoArray: object.vehicle ? wheelInfoArray : null,
-      })
-      world.addBody(bodyMeshList[i].body)
-      scene.add(bodyMeshList[i].mesh)
-
-      i++
     }
+
+    addObjects(objectList)
 
     const copy = () => {
       // CANNON.jsの物理ボディの位置と回転をTHREE.jsのメッシュにコピー
@@ -217,7 +231,7 @@ export default {
 
     /** 環境光源 */
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-    directionalLight.position.set(0, 1, 0)
+    directionalLight.position.set(0, 1, 1)
     scene.add(directionalLight)
 
     this.initThree(scene, camera, renderer, copy, world)
@@ -254,10 +268,11 @@ export default {
       scene.add(new THREE.GridHelper(20, 20, 0x0000ff, 0x404040))
 
       //カメラ設定
+      camera.up.set(0, 0, 1) // Z軸を上方向に設定
       camera.aspect = clientWidth / clientHeight
       camera.updateProjectionMatrix()
-      camera.position.set(30, 10, 0)
-      camera.lookAt(0, 3, 0)
+      camera.position.set(30, 0, 5)
+      camera.lookAt(0, 0, 4.5) // カメラの注視点を設定
 
       //レンダラー設定
       renderer.setSize(clientWidth, clientHeight)
