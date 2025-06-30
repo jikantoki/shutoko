@@ -19,6 +19,7 @@ export default {
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
+      shadowMapEnabled: true, // 影を有効にする
     })
 
     // CANNON.jsの初期化
@@ -129,6 +130,7 @@ export default {
 
         /** THREE.jsのメッシュを作成 */
         const mesh = object.mesh
+        mesh.castShadow = true // メッシュが影を落とすように設定
         mesh.position.copy(body.position)
         mesh.quaternion.copy(body.quaternion)
 
@@ -230,8 +232,9 @@ export default {
     this.container = this.$refs.container
 
     /** 環境光源 */
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-    directionalLight.position.set(0, 1, 1)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    directionalLight.position.set(0.1, -1, 1)
+    directionalLight.castShadow = true // 影を有効にする
     scene.add(directionalLight)
 
     this.initThree(scene, camera, renderer, copy, world)
