@@ -15,7 +15,15 @@ export default {
     }
   },
   mounted() {
+    const upKey = 38 // 上矢印キー
+    const downKey = 40 // 下矢印キー
+    const leftKey = 37 // 左矢印キー
+    const rightKey = 39 // 右矢印キー
+    const bKey = 66 // Bキー
+
     const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0xeeeeee) // 背景色を設定
+    scene.fog = new THREE.FogExp2(0xeeeeee, 0.01) // フォグを設定
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -40,6 +48,9 @@ export default {
     /** 物体のリスト */
     const objectList = []
 
+    /** raycastvehicle型の自分が操縦する車 */
+    let myVehicle = null
+
     /** 地面を作成 */
     const ground = {
       name: 'ground',
@@ -52,9 +63,8 @@ export default {
       mesh: new THREE.Mesh(
         new THREE.BoxGeometry(20, 20, 0.02),
         new THREE.MeshStandardMaterial({
-          color: 0x00ff00,
-          transparent: true,
-          opacity: 0.5,
+          color: 0x339933,
+          opacity: 1,
         }),
       ),
     }
@@ -74,7 +84,8 @@ export default {
         new THREE.MeshStandardMaterial({
           color: 0xff9999,
           transparent: true,
-          opacity: 0.75,
+          roughness: 0.1, // 非光沢度を設定
+          metalness: 0.1, // 金属感を設定
         }),
       ),
     }
@@ -84,15 +95,17 @@ export default {
     const car = {
       name: 'car',
       vehicle: true,
+      myVehicle: true, // この車は自分が操縦する車であることを示すフラグ
+      controlable: true, // この車は制御可能であることを示す
       mass: 1000, // 車の質量を設定
       position: new CANNON.Vec3(0, 5, 4.5),
-      shape: new CANNON.Box(new CANNON.Vec3(3.8, 2.5, 1.4)), // 車の形状を箱型に設定
+      shape: new CANNON.Box(new CANNON.Vec3(1.9, 1.25, 0.7)), // 車の形状を箱型に設定
       mesh: new THREE.Mesh(
         new THREE.BoxGeometry(3.8, 2.5, 1.4),
         new THREE.MeshStandardMaterial({
-          color: 0x0000ff,
-          transparent: true,
-          opacity: 0.75,
+          color: 0xffffff,
+          roughness: 0.1, // 非光沢度を設定
+          metalness: 0.3, // 金属感を設定
         }),
       ),
       wheelOptions: {
@@ -143,16 +156,14 @@ export default {
           const raycastVehicle = new CANNON.RaycastVehicle({
             chassisBody: body, // 車体の物理ボディを設定
           })
-          object.wheelOptions.chassisConnectionPointLocal.set(1.3, 1.3, 0) //車幅はここで設定する
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, 1.3, -0.3) //車幅はここで設定する
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -1.3, 0)
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -1.3, -0.3)
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, 1.3, 0)
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, 1.3, -0.3)
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -1.3, 0)
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -1.3, -0.3)
           raycastVehicle.addWheel(object.wheelOptions)
-
-          raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
 
           //ホイールを1つずつ追加
           for (let j = 0; j < raycastVehicle.wheelInfos.length; j++) {
@@ -173,11 +184,11 @@ export default {
               q, // 車輪の回転を設定
             )
             const wheelMesh = new THREE.Mesh(
-              new THREE.CylinderGeometry(wheel.radius, wheel.radius, 0.3, 10),
+              new THREE.CylinderGeometry(wheel.radius, wheel.radius, 0.3, 3),
               new THREE.MeshStandardMaterial({
                 color: 0x000000,
-                transparent: true,
-                opacity: 0.75,
+                roughness: 0.1, // 非光沢度を設定
+                metalness: 0.1, // 金属感を設定
               }),
             )
             wheelMesh.castShadow = true // メッシュが影を落とすように設定
@@ -199,6 +210,13 @@ export default {
               info.body.quaternion.copy(t.quaternion)
             }
           })
+
+          if (object.myVehicle) {
+            myVehicle = raycastVehicle // 自分が操縦する車両を設定
+            myVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
+          } else {
+            raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
+          }
         }
 
         bodyMeshList.push({
@@ -247,6 +265,55 @@ export default {
     scene.add(directionalLight)
 
     this.initThree(scene, camera, renderer, copy, world)
+
+    document.onkeydown = (e) => {
+      controlVehicle(e, myVehicle)
+    }
+    document.onkeyup = (e) => {
+      controlVehicle(e, myVehicle)
+    }
+
+    const controlVehicle = (e, vehicle) => {
+      const maxSteerVal = 0.5
+      const maxForce = 1000
+
+      const keyup = e.type === 'keyup'
+      if (!keyup && e.type !== 'keydown') return
+
+      vehicle.setBrake(0, 0)
+      vehicle.setBrake(0, 1)
+      vehicle.setBrake(0, 2)
+      vehicle.setBrake(0, 3)
+
+      switch (e.keyCode) {
+        case upKey: // forward
+          vehicle.applyEngineForce(keyup ? 0 : -maxForce, 2)
+          vehicle.applyEngineForce(keyup ? 0 : -maxForce, 3)
+          break
+
+        case downKey: // backward
+          vehicle.applyEngineForce(keyup ? 0 : maxForce, 2)
+          vehicle.applyEngineForce(keyup ? 0 : maxForce, 3)
+          break
+
+        case bKey: // b
+          vehicle.setBrake(brakeForce, 0)
+          vehicle.setBrake(brakeForce, 1)
+          vehicle.setBrake(brakeForce, 2)
+          vehicle.setBrake(brakeForce, 3)
+          break
+
+        case rightKey: // right
+          vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 0)
+          vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 1)
+          break
+
+        case leftKey: // left
+          vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 0)
+          vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 1)
+          break
+      }
+    }
   },
   methods: {
     /**
@@ -277,13 +344,13 @@ export default {
         document.body.clientHeight
 
       //グリッド追加
-      scene.add(new THREE.GridHelper(20, 20, 0x0000ff, 0x404040))
+      //scene.add(new THREE.GridHelper(20, 20, 0x0000ff, 0x404040))
 
       //カメラ設定
       camera.up.set(0, 0, 1) // Z軸を上方向に設定
       camera.aspect = clientWidth / clientHeight
       camera.updateProjectionMatrix()
-      camera.position.set(30, 0, 5)
+      camera.position.set(15, -8, 3)
       camera.lookAt(0, 0, 4.5) // カメラの注視点を設定
 
       //レンダラー設定
