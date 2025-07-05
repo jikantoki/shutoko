@@ -6,6 +6,7 @@
 
 <script>
 import * as THREE from 'three'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import * as CANNON from 'cannon-es'
 
 export default {
@@ -29,6 +30,11 @@ export default {
       antialias: true,
     })
     renderer.shadowMap.enabled = true // 影を有効にする
+
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256)
+    cubeRenderTarget.texture.type = THREE.HalfFloatType // 半精度浮動小数点数を使用
+
+    const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget)
 
     // CANNON.jsの初期化
     const world = new CANNON.World()
@@ -84,8 +90,9 @@ export default {
         new THREE.MeshStandardMaterial({
           color: 0xff9999,
           transparent: true,
-          roughness: 0.1, // 非光沢度を設定
-          metalness: 0.1, // 金属感を設定
+          roughness: 0.2, // 非光沢度を設定
+          metalness: 0.8, // 金属感を設定
+          envMap: cubeRenderTarget.texture, // 環境マッピングを設定
         }),
       ),
     }
@@ -104,8 +111,9 @@ export default {
         new THREE.BoxGeometry(3.8, 2.5, 1.4),
         new THREE.MeshStandardMaterial({
           color: 0xffffff,
-          roughness: 0.1, // 非光沢度を設定
-          metalness: 0.3, // 金属感を設定
+          roughness: 0.3, // 非光沢度を設定
+          metalness: 0.99, // 金属感を設定
+          envMap: cubeRenderTarget.texture, // 環境マッピングを設定
         }),
       ),
       wheelOptions: {
@@ -184,7 +192,7 @@ export default {
               q, // 車輪の回転を設定
             )
             const wheelMesh = new THREE.Mesh(
-              new THREE.CylinderGeometry(wheel.radius, wheel.radius, 0.3, 3),
+              new THREE.CylinderGeometry(wheel.radius, wheel.radius, 0.3, 32),
               new THREE.MeshStandardMaterial({
                 color: 0x000000,
                 roughness: 0.1, // 非光沢度を設定
@@ -264,7 +272,7 @@ export default {
     directionalLight.shadow.camera.bottom = -10
     scene.add(directionalLight)
 
-    this.initThree(scene, camera, renderer, copy, world)
+    this.initThree(scene, camera, renderer, copy, world, cubeCamera)
 
     document.onkeydown = (e) => {
       controlVehicle(e, myVehicle)
@@ -332,7 +340,22 @@ export default {
     /**
      * 世界を生成
      */
-    initThree(scene, camera, renderer, copy, world) {
+    initThree(scene, camera, renderer, copy, world, cubeCamera) {
+      new RGBELoader().load(
+        '/cloud_1k.hdr', // HDRIのパス
+        (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping // HDRIを環境マッピングに設定
+          scene.environment = texture // シーンの環境マッピングに設定
+        },
+      )
+      new RGBELoader().load(
+        '/cloud_4k.hdr', // HDRIのパス
+        (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping // HDRIを環境マッピングに設定
+          scene.background = texture // シーンの背景に設定
+        },
+      )
+
       //DOMサイズ取得
       const clientWidth =
         window.innerWidth ||
@@ -361,6 +384,7 @@ export default {
       const animate = () => {
         const frame = () => {
           copy()
+          cubeCamera.update(renderer, scene) // 環境マッピングの更新
           world.fixedStep()
           renderer.render(scene, camera)
           requestAnimationFrame(frame)
