@@ -19,8 +19,8 @@ export default {
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      shadowMapEnabled: true, // 影を有効にする
     })
+    renderer.shadowMap.enabled = true // 影を有効にする
 
     // CANNON.jsの初期化
     const world = new CANNON.World()
@@ -131,6 +131,7 @@ export default {
         /** THREE.jsのメッシュを作成 */
         const mesh = object.mesh
         mesh.castShadow = true // メッシュが影を落とすように設定
+        mesh.receiveShadow = true // メッシュが影を受け取るように設定
         mesh.position.copy(body.position)
         mesh.quaternion.copy(body.quaternion)
 
@@ -179,6 +180,8 @@ export default {
                 opacity: 0.75,
               }),
             )
+            wheelMesh.castShadow = true // メッシュが影を落とすように設定
+            wheelMesh.receiveShadow = true // メッシュが影を受け取るように設定
             wheelInfoArray.push({
               body: wheelBody,
               mesh: wheelMesh,
@@ -233,8 +236,14 @@ export default {
 
     /** 環境光源 */
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
-    directionalLight.position.set(0.1, -1, 1)
+    directionalLight.position.set(1, -1, 1)
     directionalLight.castShadow = true // 影を有効にする
+    directionalLight.shadow.mapSize.width = 1024 // シャドウマップの幅を設定
+    directionalLight.shadow.mapSize.height = 1024 // シャドウマップの高さを設定
+    directionalLight.shadow.camera.right = 10
+    directionalLight.shadow.camera.left = -10
+    directionalLight.shadow.camera.top = 10
+    directionalLight.shadow.camera.bottom = -10
     scene.add(directionalLight)
 
     this.initThree(scene, camera, renderer, copy, world)
