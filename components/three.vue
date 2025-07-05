@@ -27,12 +27,13 @@ export default {
     scene.fog = new THREE.FogExp2(0xeeeeee, 0.01) // フォグを設定
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: true, // アンチエイリアスを有効にする
     })
     renderer.shadowMap.enabled = true // 影を有効にする
 
     const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256)
     cubeRenderTarget.texture.type = THREE.HalfFloatType // 半精度浮動小数点数を使用
+    cubeRenderTarget.texture.mapping = THREE.CubeReflectionMapping // キューブマッピングを使用
 
     const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget)
 
@@ -61,6 +62,7 @@ export default {
     const ground = {
       name: 'ground',
       mass: 0, // 地面は動かないので質量は0
+      isStatic: true, // 静的な物体として設定
       position: new CANNON.Vec3(0, 0, 0),
       shape: new CANNON.Box(new CANNON.Vec3(10, 0.01, 10)), // 地面の形状
       material: new CANNON.Material({
@@ -90,8 +92,8 @@ export default {
         new THREE.MeshStandardMaterial({
           color: 0xff9999,
           transparent: true,
-          roughness: 0.2, // 非光沢度を設定
-          metalness: 0.8, // 金属感を設定
+          roughness: 0.0, // 非光沢度を設定
+          metalness: 1.0, // 金属感を設定
           envMap: cubeRenderTarget.texture, // 環境マッピングを設定
         }),
       ),
@@ -105,20 +107,20 @@ export default {
       myVehicle: true, // この車は自分が操縦する車であることを示すフラグ
       controlable: true, // この車は制御可能であることを示す
       mass: 1000, // 車の質量を設定
-      position: new CANNON.Vec3(0, 4.5, 5),
-      shape: new CANNON.Box(new CANNON.Vec3(1.9, 0.7, 1.25)), // 車の形状を箱型に設定
+      position: new CANNON.Vec3(0, 3, 5),
+      shape: new CANNON.Box(new CANNON.Vec3(1.9, 0.6, 0.8)), // 車の形状を箱型に設定
       mesh: new THREE.Mesh(
-        new THREE.BoxGeometry(3.8, 1.4, 2.5),
+        new THREE.BoxGeometry(3.8, 1.2, 1.6),
         new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          roughness: 0.1, // 非光沢度を設定
-          metalness: 0.99, // 金属感を設定
-          reflectivity: 0.5, // 反射率を設定
+          color: 0xccccff,
+          roughness: 0.0, // 非光沢度を設定
+          metalness: 1.0, // 金属感を設定
+          reflectivity: 1, // 反射率を設定
           envMap: cubeRenderTarget.texture, // 環境マッピングを設定
         }),
       ),
       wheelOptions: {
-        radius: 0.4, // 車輪の半径を設定
+        radius: 0.2, // 車輪の半径を設定
         directionLocal: new CANNON.Vec3(0, -1, 0), // 車輪の方向を設定
         suspensionStiffness: 50, // サスペンションの剛性を設定
         suspensionRestLength: 0.5, // サスペンションの初期長さを設定
@@ -165,13 +167,13 @@ export default {
           const raycastVehicle = new CANNON.RaycastVehicle({
             chassisBody: body, // 車体の物理ボディを設定
           })
-          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -0.3, 1.3) //車幅はここで設定する
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -0.1, 0.7) //車幅はここで設定する
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -0.3, -1.3)
+          object.wheelOptions.chassisConnectionPointLocal.set(-1.3, -0.1, -0.7)
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -0.3, 1.3)
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -0.1, 0.7)
           raycastVehicle.addWheel(object.wheelOptions)
-          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -0.3, -1.3)
+          object.wheelOptions.chassisConnectionPointLocal.set(1.3, -0.1, -0.7)
           raycastVehicle.addWheel(object.wheelOptions)
 
           //ホイールを1つずつ追加
@@ -235,10 +237,16 @@ export default {
           }
         }
 
+        let isStatic = object.mass === 0 // 質量が0なら静的な物体と判断
+        if (object.isStatic) {
+          isStatic = object.isStatic // isStaticフラグが設定されている場合はそれを使用
+        }
+
         bodyMeshList.push({
           body: body,
           mesh: mesh,
           isVehicle: object.vehicle,
+          isStatic: isStatic, // 静的な物体かどうかを示すフラグ
           wheelInfoArray: object.vehicle ? wheelInfoArray : null,
         })
         world.addBody(bodyMeshList[i].body)
@@ -250,9 +258,14 @@ export default {
 
     addObjects(objectList)
 
+    /**
+     * 物理ボディの位置と回転をTHREE.jsのメッシュにコピーする関数
+     * @returns {void}
+     */
     const copy = () => {
       // CANNON.jsの物理ボディの位置と回転をTHREE.jsのメッシュにコピー
       for (const bodyMesh of bodyMeshList) {
+        if (bodyMesh.isStatic) continue // 静的な物体はスキップ
         bodyMesh.mesh.position.copy(bodyMesh.body.position)
         bodyMesh.mesh.quaternion.copy(bodyMesh.body.quaternion)
         if (bodyMesh.isVehicle) {
@@ -388,7 +401,7 @@ export default {
 
       //レンダラー設定
       renderer.setSize(clientWidth, clientHeight)
-      renderer.setPixelRatio(clientWidth / clientHeight)
+      renderer.setPixelRatio(clientWidth / clientHeight) // ピクセル比を設定
       this.$refs.container.appendChild(renderer.domElement)
 
       const animate = () => {
