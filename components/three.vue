@@ -306,8 +306,6 @@ export default {
               this.cameraLookAt.y = myVehicle.chassisBody.position.y + 1
               this.cameraLookAt.z =
                 myVehicle.chassisBody.position.z + forward.z * -30
-
-              console.log(hedlight1.target.position)
             })
           } else {
             raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
