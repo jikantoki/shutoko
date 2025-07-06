@@ -13,6 +13,16 @@ export default {
   data() {
     return {
       container: null,
+      cameraPos: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+      cameraLookAt: {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
     }
   },
   mounted() {
@@ -23,7 +33,7 @@ export default {
     const bKey = 66 // Bキー
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0xeeeeee) // 背景色を設定
+    //scene.background = new THREE.Color(0xeeeeee) // 背景色を設定
     scene.fog = new THREE.FogExp2(0xeeeeee, 0.01) // フォグを設定
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
@@ -64,41 +74,94 @@ export default {
       mass: 0, // 地面は動かないので質量は0
       isStatic: true, // 静的な物体として設定
       position: new CANNON.Vec3(0, 0, 0),
-      shape: new CANNON.Box(new CANNON.Vec3(10, 0.01, 10)), // 地面の形状
+      shape: new CANNON.Box(new CANNON.Vec3(30, 0.01, 30)), // 地面の形状
       material: new CANNON.Material({
         restitution: 0.5, // 反発係数
       }),
       mesh: new THREE.Mesh(
-        new THREE.BoxGeometry(20, 0.02, 20),
+        new THREE.BoxGeometry(60, 0.02, 60),
         new THREE.MeshStandardMaterial({
-          color: 0x339933,
-          opacity: 1,
+          color: 0x226622,
         }),
       ),
     }
     objectList.push(ground)
 
+    //gridhelper
+    const gridHelper = new THREE.GridHelper(60, 60, 0x0000ff, 0x404040)
+    gridHelper.position.set(0, 0.01, 0) // 地面
+    scene.add(gridHelper)
+
     /** 球体を作成 */
-    const Sphere = {
-      name: 'sphere',
-      mass: 10, // 質量を設定
-      position: new CANNON.Vec3(5, 10, 0), // 初期位置を設定
-      shape: new CANNON.Sphere(0.5), // 球体の半径を0.5に設定
-      material: new CANNON.Material({
-        restitution: 1, // 反発係数
-      }),
-      mesh: new THREE.Mesh(
-        new THREE.SphereGeometry(0.5, 32, 32),
-        new THREE.MeshStandardMaterial({
-          color: 0xff9999,
-          transparent: true,
-          roughness: 0.0, // 非光沢度を設定
-          metalness: 1.0, // 金属感を設定
-          envMap: cubeRenderTarget.texture, // 環境マッピングを設定
+    const Sphere = () => {
+      return {
+        name: 'sphere',
+        mass: 10, // 質量を設定
+        position: new CANNON.Vec3(5, 10, 0), // 初期位置を設定
+        shape: new CANNON.Sphere(0.5), // 球体の半径を0.5に設定
+        material: new CANNON.Material({
+          restitution: 1, // 反発係数
         }),
-      ),
+        mesh: new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 32, 32),
+          new THREE.MeshStandardMaterial({
+            color: 0xff9999,
+            transparent: true,
+            roughness: 0.0, // 非光沢度を設定
+            metalness: 1.0, // 金属感を設定
+            envMap: cubeRenderTarget.texture, // 環境マッピングを設定
+          }),
+        ),
+      }
     }
-    objectList.push(Sphere)
+    objectList.push(Sphere())
+
+    const sphere2 = Sphere()
+    sphere2.position.set(-5, 8, 0) // 球体の位置を変更
+    sphere2.mass = 0.1 // 球体の質量を変更
+    objectList.push(sphere2)
+
+    const carMeshes = new THREE.Object3D() // 車のメッシュを格納するオブジェクト
+    const carBody = new THREE.Mesh(
+      new THREE.BoxGeometry(3.8, 1.2, 1.6),
+      new THREE.MeshStandardMaterial({
+        color: 0x000000,
+        roughness: 0.0, // 非光沢度を設定
+        metalness: 1, // 金属感を設定
+        reflectivity: 1, // 反射率を設定
+        transparent: true, // 透明度を有効にする
+        envMap: cubeRenderTarget.texture, // 環境マッピングを設定
+      }),
+    )
+    carBody.castShadow = true // 車体が影を落とすように設定
+
+    /** 車体のメッシュを作成 */
+    carMeshes.add(carBody)
+
+    // new THREE.SpotLight(色, 光の強さ, 距離, 照射角, ボケ具合, 減衰率)
+    /** ヘッドライトを追加 */
+    const hedlight = () => {
+      const hedlight = new THREE.SpotLight(
+        0xffff00,
+        10, // 光のカンデラを設定
+        0, // 光の届く距離を設定
+        Math.PI / 20, // 照射角を設定
+        3, // ボケ具合を設定
+        1, // 減衰率を設定
+      ) // ヘッドライトを作成
+      hedlight.position.set(-1.91, 0.3, 0) // 車の前方に配置
+      hedlight.power = 100 // 光の強さを設定
+      hedlight.castShadow = true // ヘッドライトが影を落とすように設定
+      hedlight.shadow.mapSize.width = 1024 // シャドウマップの幅
+      hedlight.shadow.mapSize.height = 1024 // シャドウマップの高さ
+      hedlight.target.position.set(-10, -1.3, 0) // ヘッドライトの照射先を設定
+      return hedlight
+    }
+    const hedlight1 = hedlight() // ヘッドライトを生成
+    carMeshes.add(hedlight1) // ヘッドライトを車のメッシュに追加
+    carMeshes.add(hedlight1.target) // ヘッドライトの照射先を車のメッシュに追加
+
+    carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
 
     /** 車体のボディー */
     const car = {
@@ -109,16 +172,7 @@ export default {
       mass: 1000, // 車の質量を設定
       position: new CANNON.Vec3(0, 3, 5),
       shape: new CANNON.Box(new CANNON.Vec3(1.9, 0.6, 0.8)), // 車の形状を箱型に設定
-      mesh: new THREE.Mesh(
-        new THREE.BoxGeometry(3.8, 1.2, 1.6),
-        new THREE.MeshStandardMaterial({
-          color: 0xccccff,
-          roughness: 0.0, // 非光沢度を設定
-          metalness: 1.0, // 金属感を設定
-          reflectivity: 1, // 反射率を設定
-          envMap: cubeRenderTarget.texture, // 環境マッピングを設定
-        }),
-      ),
+      mesh: carMeshes, // 車のメッシュを設定
       wheelOptions: {
         radius: 0.2, // 車輪の半径を設定
         directionLocal: new CANNON.Vec3(0, -1, 0), // 車輪の方向を設定
@@ -232,6 +286,24 @@ export default {
           if (object.myVehicle) {
             myVehicle = raycastVehicle // 自分が操縦する車両を設定
             myVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
+            world.addEventListener('postStep', () => {
+              // 車両の位置を更新
+              const forward = new THREE.Vector3(1, 0, 0) // 前方方向
+              forward.applyQuaternion(myVehicle.chassisBody.quaternion) // 車両のクォータニオンを適用
+              this.cameraPos.x =
+                myVehicle.chassisBody.position.x + forward.x * 12
+              this.cameraPos.y = myVehicle.chassisBody.position.y + 3
+              this.cameraPos.z =
+                myVehicle.chassisBody.position.z + forward.z * 12
+              // カメラの位置を更新
+              this.cameraLookAt.x =
+                myVehicle.chassisBody.position.x + forward.x * -30
+              this.cameraLookAt.y = myVehicle.chassisBody.position.y + 1
+              this.cameraLookAt.z =
+                myVehicle.chassisBody.position.z + forward.z * -30
+
+              console.log(hedlight1.target.position)
+            })
           } else {
             raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
           }
@@ -249,6 +321,7 @@ export default {
           isStatic: isStatic, // 静的な物体かどうかを示すフラグ
           wheelInfoArray: object.vehicle ? wheelInfoArray : null,
         })
+
         world.addBody(bodyMeshList[i].body)
         scene.add(bodyMeshList[i].mesh)
 
@@ -281,8 +354,8 @@ export default {
 
     this.container = this.$refs.container
 
-    /** 環境光源 */
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    /** 太陽光 */
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.02)
     directionalLight.position.set(20, 100, 50)
     directionalLight.castShadow = true // 影を有効にする
     directionalLight.shadow.mapSize.width = 1024 // シャドウマップの幅を設定
@@ -303,7 +376,7 @@ export default {
     }
 
     const controlVehicle = (e, vehicle) => {
-      const maxSteerVal = 0.5
+      const maxSteerVal = 0.8
       const maxForce = 1000
       const brakeForce = 1000000
 
@@ -364,6 +437,7 @@ export default {
      * 世界を生成
      */
     initThree(scene, camera, renderer, copy, world, cubeCamera) {
+      /*
       new RGBELoader().load(
         '/cloud_1k.hdr', // HDRIのパス
         (texture) => {
@@ -378,6 +452,7 @@ export default {
           scene.background = texture // シーンの背景に設定
         },
       )
+        */
 
       //DOMサイズ取得
       const clientWidth =
@@ -408,6 +483,16 @@ export default {
         const frame = () => {
           copy()
           cubeCamera.update(renderer, scene) // 環境マッピングの更新
+          camera.position.set(
+            this.cameraPos.x,
+            this.cameraPos.y,
+            this.cameraPos.z,
+          )
+          camera.lookAt(
+            this.cameraLookAt.x,
+            this.cameraLookAt.y,
+            this.cameraLookAt.z,
+          )
           world.fixedStep()
           renderer.render(scene, camera)
           requestAnimationFrame(frame)
