@@ -30,6 +30,11 @@ export default {
     const downKey = 40 // 下矢印キー
     const leftKey = 37 // 左矢印キー
     const rightKey = 39 // 右矢印キー
+    const wKey = 87 // Wキー
+    const aKey = 65 // Aキー
+    const sKey = 83 // Sキー
+    const dKey = 68 // Dキー
+    const spaceKey = 32 // スペースキー
     const bKey = 66 // Bキー
 
     const scene = new THREE.Scene()
@@ -377,7 +382,7 @@ export default {
 
     const controlVehicle = (e, vehicle) => {
       const maxSteerVal = 0.8
-      const maxForce = 1000
+      const maxForce = 2000
       const brakeForce = 1000000
 
       const keyup = e.type === 'keyup'
@@ -390,11 +395,13 @@ export default {
 
       switch (e.keyCode) {
         case upKey: // forward
+        case wKey: // w
           vehicle.applyEngineForce(keyup ? 0 : -maxForce, 2)
           vehicle.applyEngineForce(keyup ? 0 : -maxForce, 3)
           break
 
         case downKey: // backward
+        case sKey: // s
           vehicle.applyEngineForce(keyup ? 0 : maxForce, 2)
           vehicle.applyEngineForce(keyup ? 0 : maxForce, 3)
           break
@@ -408,11 +415,13 @@ export default {
           break
 
         case rightKey: // right
+        case dKey: // d
           vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 0)
           vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 1)
           break
 
         case leftKey: // left
+        case aKey: // a
           vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 0)
           vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 1)
           break
