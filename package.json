@@ -18,10 +18,12 @@
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.22.15",
+    "@googlemaps/three": "^4.0.13",
     "@mdi/font": "^7.3.67",
     "@nuxt/devtools": "^2.3.1",
     "@pinia-plugin-persistedstate/nuxt": "^1.2.0",
     "@pinia/nuxt": "^0.5.1",
+    "@types/google.maps": "^3.58.1",
     "@types/three": "^0.177.0",
     "@typescript-eslint/parser": "^6.7.5",
     "@vue/language-plugin-pug": "^1.8.18",

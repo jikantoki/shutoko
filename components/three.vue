@@ -6,6 +6,8 @@
 
 <script>
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { ThreeJSOverlayView } from '@googlemaps/three'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import * as CANNON from 'cannon-es'
 
@@ -23,19 +25,29 @@ export default {
         y: 0,
         z: 0,
       },
+      cameraForward: {
+        x: 1,
+        y: 1,
+        z: 0,
+      },
     }
   },
-  mounted() {
-    const upKey = 38 // 上矢印キー
-    const downKey = 40 // 下矢印キー
-    const leftKey = 37 // 左矢印キー
-    const rightKey = 39 // 右矢印キー
-    const wKey = 87 // Wキー
-    const aKey = 65 // Aキー
-    const sKey = 83 // Sキー
-    const dKey = 68 // Dキー
-    const spaceKey = 32 // スペースキー
-    const bKey = 66 // Bキー
+  async mounted() {
+    /* キーコードの定義 */
+    const key = {
+      up: 38,
+      down: 40,
+      left: 37,
+      right: 39,
+      w: 87,
+      a: 65,
+      s: 83,
+      d: 68,
+      space: 32,
+      b: 66,
+      q: 81,
+      e: 69,
+    }
 
     const scene = new THREE.Scene()
     //scene.background = new THREE.Color(0xeeeeee) // 背景色を設定
@@ -86,7 +98,7 @@ export default {
       mesh: new THREE.Mesh(
         new THREE.BoxGeometry(60, 0.02, 60),
         new THREE.MeshStandardMaterial({
-          color: 0x226622,
+          color: 0x222222,
         }),
       ),
     }
@@ -130,7 +142,7 @@ export default {
     const carBody = new THREE.Mesh(
       new THREE.BoxGeometry(3.8, 1.2, 1.6),
       new THREE.MeshStandardMaterial({
-        color: 0x000000,
+        color: 0xffffff,
         roughness: 0.0, // 非光沢度を設定
         metalness: 1, // 金属感を設定
         reflectivity: 1, // 反射率を設定
@@ -147,14 +159,14 @@ export default {
     /** ヘッドライトを追加 */
     const hedlight = () => {
       const hedlight = new THREE.SpotLight(
-        0xffff00,
-        10, // 光のカンデラを設定
+        0xffffff, // ヘッドライトの色を設定
+        100, // 光のカンデラを設定
         0, // 光の届く距離を設定
-        Math.PI / 20, // 照射角を設定
-        3, // ボケ具合を設定
+        Math.PI / 12, // 照射角を設定
+        2, // ボケ具合を設定
         1, // 減衰率を設定
       ) // ヘッドライトを作成
-      hedlight.position.set(-1.91, 0.3, 0) // 車の前方に配置
+      hedlight.position.set(-1.91, -0.2, 0) // 車の前方に配置
       hedlight.power = 100 // 光の強さを設定
       hedlight.castShadow = true // ヘッドライトが影を落とすように設定
       hedlight.shadow.mapSize.width = 1024 // シャドウマップの幅
@@ -163,10 +175,19 @@ export default {
       return hedlight
     }
     const hedlight1 = hedlight() // ヘッドライトを生成
+    hedlight1.position.z = 0.8 // ヘッドライトの位置を調整
+    hedlight1.target.position.z = 0.8 // ヘッドライトの照射先の位置を調整
     carMeshes.add(hedlight1) // ヘッドライトを車のメッシュに追加
     carMeshes.add(hedlight1.target) // ヘッドライトの照射先を車のメッシュに追加
 
+    const hedlight2 = hedlight() // ヘッドライトを生成
+    hedlight2.position.z = -0.8 // ヘッドライトの位置を調整
+    hedlight2.target.position.z = -0.8 // ヘッドライトの照射先の位置を調整
+    carMeshes.add(hedlight2) // ヘッドライトを車のメッシュに追加
+    carMeshes.add(hedlight2.target) // ヘッドライトの照射先を車のメッシュに追加
+
     carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
+    carMeshes.add(new THREE.SpotLightHelper(hedlight2)) // ヘッドライトのヘルパーを追加
 
     /** 車体のボディー */
     const car = {
@@ -293,17 +314,23 @@ export default {
             myVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
             world.addEventListener('postStep', () => {
               // 車両の位置を更新
-              const forward = new THREE.Vector3(1, 0, 0) // 前方方向
+              const forward = new THREE.Vector3(
+                this.cameraForward.x,
+                this.cameraForward.y,
+                this.cameraForward.z,
+              ) // 前方方向
               forward.applyQuaternion(myVehicle.chassisBody.quaternion) // 車両のクォータニオンを適用
               this.cameraPos.x =
                 myVehicle.chassisBody.position.x + forward.x * 12
-              this.cameraPos.y = myVehicle.chassisBody.position.y + 3
+              this.cameraPos.y =
+                myVehicle.chassisBody.position.y + forward.y * 3
               this.cameraPos.z =
                 myVehicle.chassisBody.position.z + forward.z * 12
               // カメラの位置を更新
               this.cameraLookAt.x =
                 myVehicle.chassisBody.position.x + forward.x * -30
-              this.cameraLookAt.y = myVehicle.chassisBody.position.y + 1
+              this.cameraLookAt.y =
+                myVehicle.chassisBody.position.y + forward.y * -1
               this.cameraLookAt.z =
                 myVehicle.chassisBody.position.z + forward.z * -30
             })
@@ -358,7 +385,7 @@ export default {
     this.container = this.$refs.container
 
     /** 太陽光 */
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.02)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
     directionalLight.position.set(20, 100, 50)
     directionalLight.castShadow = true // 影を有効にする
     directionalLight.shadow.mapSize.width = 1024 // シャドウマップの幅を設定
@@ -392,19 +419,19 @@ export default {
       vehicle.setBrake(0, 3)
 
       switch (e.keyCode) {
-        case upKey: // forward
-        case wKey: // w
+        case key.up: // forward
+        case key.w: // w
           vehicle.applyEngineForce(keyup ? 0 : -maxForce, 2)
           vehicle.applyEngineForce(keyup ? 0 : -maxForce, 3)
           break
 
-        case downKey: // backward
-        case sKey: // s
+        case key.down: // backward
+        case key.s: // s
           vehicle.applyEngineForce(keyup ? 0 : maxForce, 2)
           vehicle.applyEngineForce(keyup ? 0 : maxForce, 3)
           break
 
-        case bKey: // b
+        case key.b: // b
           //サイドブレーキ仕様で、後輪のみ
           //vehicle.setBrake(brakeForce, 0)
           //vehicle.setBrake(brakeForce, 1)
@@ -412,17 +439,28 @@ export default {
           vehicle.setBrake(brakeForce, 3)
           break
 
-        case rightKey: // right
-        case dKey: // d
+        case key.right: // right
+        case key.d: // d
           vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 0)
           vehicle.setSteeringValue(keyup ? 0 : -maxSteerVal, 1)
           break
 
-        case leftKey: // left
-        case aKey: // a
+        case key.left: // left
+        case key.a: // a
           vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 0)
           vehicle.setSteeringValue(keyup ? 0 : maxSteerVal, 1)
           break
+
+        case key.q: // q
+          this.cameraForward.x = keyup ? 1 : -1
+          this.cameraForward.y = keyup ? 1 : 0.3
+          this.cameraForward.z = keyup ? 0 : 0.5
+          break
+
+        case key.e: // e
+          this.cameraForward.x = keyup ? 1 : -1
+          this.cameraForward.y = keyup ? 1 : 0.3
+          this.cameraForward.z = keyup ? 0 : -0.5
       }
     }
   },
@@ -471,11 +509,7 @@ export default {
         document.documentElement.clientHeight ||
         document.body.clientHeight
 
-      //グリッド追加
-      //scene.add(new THREE.GridHelper(20, 20, 0x0000ff, 0x404040))
-
       //カメラ設定
-      //camera.up.set(0, 0, 1) // Z軸を上方向に設定
       camera.aspect = clientWidth / clientHeight
       camera.updateProjectionMatrix()
       camera.position.set(5, 3, 20)

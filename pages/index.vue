@@ -1,5 +1,10 @@
 <template lang="pug">
   three
+  .description
+    h2 操作説明
+    p WASDキーで車両を操作
+    p Bキーで強制ブレーキ
+    p Q、Eキーで車両を前から見る
 </template>
 
 <script>
@@ -25,3 +30,13 @@ export default {
   methods: {},
 }
 </script>
+
+<style lang="scss" scoped>
+.description {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  color: white;
+}
+</style>
