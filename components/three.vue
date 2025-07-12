@@ -195,16 +195,39 @@ export default {
       return hedlight
     }
     const hedlight1 = hedlight() // ヘッドライトを生成
-    hedlight1.position.z = 0.7 // ヘッドライトの位置を調整
+    hedlight1.position.z = 0.5 // ヘッドライトの位置を調整
     hedlight1.target.position.z = 0.5 // ヘッドライトの照射先の位置を調整
     carMeshes.add(hedlight1) // ヘッドライトを車のメッシュに追加
     carMeshes.add(hedlight1.target) // ヘッドライトの照射先を車のメッシュに追加
 
     const hedlight2 = hedlight() // ヘッドライトを生成
-    hedlight2.position.z = -0.7 // ヘッドライトの位置を調整
+    hedlight2.position.z = -0.5 // ヘッドライトの位置を調整
     hedlight2.target.position.z = -0.5 // ヘッドライトの照射先の位置を調整
     carMeshes.add(hedlight2) // ヘッドライトを車のメッシュに追加
     carMeshes.add(hedlight2.target) // ヘッドライトの照射先を車のメッシュに追加
+
+    const foglight = () => {
+      const foglight = hedlight()
+      foglight.position.set(-1.91, -0.4, 0) // フォグライトの位置を調整
+      foglight.target.position.y = -2 // フォグライトの照射先の位置を調整
+      foglight.color.set(0xffff00) // フォグライトの色を設定
+      foglight.angle = Math.PI / 16 // フォグライトの照射角を設定
+      foglight.distance = 10 // フォグライトの光の届く距離を設定
+      foglight.power = 50 // フォグライトの光の強さを設定
+      return foglight
+    }
+
+    const foglight1 = foglight() // フォグライトを生成
+    foglight1.position.z = 0.5 // フォグライトの位置を調整
+    foglight1.target.position.z = 0.5 // フォグライトの照射先の位置を調整
+    carMeshes.add(foglight1) // フォグライトを車のメッシュに追加
+    carMeshes.add(foglight1.target) // フォグライトの照射先を車のメッシュに追加
+
+    const foglight2 = foglight() // フォグライトを生成
+    foglight2.position.z = -0.5 // フォグライトの位置を調整
+    foglight2.target.position.z = -0.5 // フォグライトの照射先の位置を調整
+    carMeshes.add(foglight2) // フォグライトを車のメッシュに追加
+    carMeshes.add(foglight2.target) // フォグライトの照射先を車のメッシュに追加
 
     //carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
     //carMeshes.add(new THREE.SpotLightHelper(hedlight2)) // ヘッドライトのヘルパーを追加
@@ -233,6 +256,25 @@ export default {
     const lightCylinder2 = lightCylinder() // 光るシリンダーを生成
     lightCylinder2.position.z = -0.5 // 光るシリンダーの位置を調整
     carMeshes.add(lightCylinder2) // 光るシリンダーを追加
+
+    const foglightCylinder = () => {
+      const cylinder = lightCylinder() // 光るシリンダーを生成
+      cylinder.position.set(-1.91, -0.4, 0) // フォグライトの位置を調整
+      console.log(cylinder.emissive)
+      console.log(cylinder)
+      cylinder.material.emissive.set(0xffff00) // フォグライトの発光色を設定
+      console.log(cylinder.emissive)
+      cylinder.material.emissiveIntensity = 0.6 // フォグライトの発光強度を設定
+      return cylinder
+    }
+
+    const foglightCylinder1 = foglightCylinder() // フォグライトの光るシリンダーを生成
+    foglightCylinder1.position.z = 0.5 // フォグライトの光るシリンダーの位置を調整
+    carMeshes.add(foglightCylinder1) // フォグライトの光るシリンダーを追加
+
+    const foglightCylinder2 = foglightCylinder() // フォグライトの光るシリンダーを生成
+    foglightCylinder2.position.z = -0.5 // フォグライトの光るシリンダーの位置を調整
+    carMeshes.add(foglightCylinder2) // フォグライトの光るシリンダーを追加
 
     const tailLight = () => {
       const cylinder = new THREE.Mesh(
