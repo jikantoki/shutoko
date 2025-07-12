@@ -6,6 +6,7 @@
 
 <script>
 import * as THREE from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { ThreeJSOverlayView } from '@googlemaps/three'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
@@ -71,12 +72,13 @@ export default {
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x000010) // 背景色を設定
-    scene.fog = new THREE.FogExp2(0xeeeeee, 0.01) // フォグを設定
+    scene.fog = new THREE.FogExp2(0x777777, 0.01) // フォグを設定
     const camera = new THREE.PerspectiveCamera()
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new WebGPURenderer({
       antialias: true, // アンチエイリアスを有効にする
     })
     renderer.shadowMap.enabled = true // 影を有効にする
+    await renderer.init()
 
     const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256)
     cubeRenderTarget.texture.type = THREE.HalfFloatType // 半精度浮動小数点数を使用
@@ -516,7 +518,7 @@ export default {
     scene.add(directionalLight)
     scene.add(directionalLight.target) // 光の照射先を追加
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1) // 環境光を追加
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1) // 環境光を追加
     scene.add(ambientLight)
 
     this.initThree(
