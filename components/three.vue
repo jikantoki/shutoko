@@ -260,10 +260,7 @@ export default {
     const foglightCylinder = () => {
       const cylinder = lightCylinder() // 光るシリンダーを生成
       cylinder.position.set(-1.91, -0.4, 0) // フォグライトの位置を調整
-      console.log(cylinder.emissive)
-      console.log(cylinder)
       cylinder.material.emissive.set(0xffff00) // フォグライトの発光色を設定
-      console.log(cylinder.emissive)
       cylinder.material.emissiveIntensity = 0.6 // フォグライトの発光強度を設定
       return cylinder
     }
