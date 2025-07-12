@@ -14,20 +14,34 @@ import * as CANNON from 'cannon-es'
 export default {
   data() {
     return {
+      /** canvasのDOM格納場所 */
       container: null,
+      /** カメラの場所 */
       cameraPos: {
         x: 0,
         y: 0,
         z: 0,
       },
+      /** カメラの向く先 */
       cameraLookAt: {
         x: 0,
         y: 0,
         z: 0,
       },
+      /** カメラの角度 */
       cameraForward: {
         x: 1,
         y: 1,
+        z: 0,
+      },
+      directionalLightPosition: {
+        x: 2,
+        y: 10,
+        z: 5,
+      },
+      directionalLightTarget: {
+        x: 0,
+        y: 0,
         z: 0,
       },
     }
@@ -50,7 +64,7 @@ export default {
     }
 
     const scene = new THREE.Scene()
-    //scene.background = new THREE.Color(0xeeeeee) // 背景色を設定
+    scene.background = new THREE.Color(0x000010) // 背景色を設定
     scene.fog = new THREE.FogExp2(0xeeeeee, 0.01) // フォグを設定
     const camera = new THREE.PerspectiveCamera()
     const renderer = new THREE.WebGLRenderer({
@@ -333,6 +347,18 @@ export default {
                 myVehicle.chassisBody.position.y + forward.y * -1
               this.cameraLookAt.z =
                 myVehicle.chassisBody.position.z + forward.z * -30
+              this.directionalLightPosition.x =
+                myVehicle.chassisBody.position.x + 20
+              this.directionalLightPosition.y =
+                myVehicle.chassisBody.position.y + 20
+              this.directionalLightPosition.z =
+                myVehicle.chassisBody.position.z + 20
+              this.directionalLightTarget.x =
+                myVehicle.chassisBody.position.x + -20
+              this.directionalLightTarget.y =
+                myVehicle.chassisBody.position.y + -20
+              this.directionalLightTarget.z =
+                myVehicle.chassisBody.position.z + -20
             })
           } else {
             raycastVehicle.addToWorld(world) // RaycastVehicleを物理世界に追加
@@ -386,17 +412,25 @@ export default {
 
     /** 太陽光 */
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
-    directionalLight.position.set(20, 100, 50)
     directionalLight.castShadow = true // 影を有効にする
-    directionalLight.shadow.mapSize.width = 1024 // シャドウマップの幅を設定
-    directionalLight.shadow.mapSize.height = 1024 // シャドウマップの高さを設定
-    directionalLight.shadow.camera.right = 10
-    directionalLight.shadow.camera.left = -10
-    directionalLight.shadow.camera.top = 10
-    directionalLight.shadow.camera.bottom = -10
+    directionalLight.shadow.mapSize.width = 2048 // シャドウマップの幅を設定
+    directionalLight.shadow.mapSize.height = 2048 // シャドウマップの高さを設定
+    directionalLight.shadow.camera.right = 20
+    directionalLight.shadow.camera.left = -20
+    directionalLight.shadow.camera.top = 20
+    directionalLight.shadow.camera.bottom = -20
     scene.add(directionalLight)
+    scene.add(directionalLight.target) // 光の照射先を追加
 
-    this.initThree(scene, camera, renderer, copy, world, cubeCamera)
+    this.initThree(
+      scene,
+      camera,
+      renderer,
+      copy,
+      world,
+      cubeCamera,
+      directionalLight,
+    )
 
     document.onkeydown = (e) => {
       controlVehicle(e, myVehicle)
@@ -481,7 +515,15 @@ export default {
     /**
      * 世界を生成
      */
-    initThree(scene, camera, renderer, copy, world, cubeCamera) {
+    initThree(
+      scene,
+      camera,
+      renderer,
+      copy,
+      world,
+      cubeCamera,
+      directionalLight,
+    ) {
       /*
       new RGBELoader().load(
         '/cloud_1k.hdr', // HDRIのパス
@@ -534,6 +576,17 @@ export default {
             this.cameraLookAt.y,
             this.cameraLookAt.z,
           )
+          directionalLight.position.set(
+            this.directionalLightPosition.x,
+            this.directionalLightPosition.y,
+            this.directionalLightPosition.z,
+          )
+          directionalLight.target.position.set(
+            this.directionalLightTarget.x,
+            this.directionalLightTarget.y,
+            this.directionalLightTarget.z,
+          )
+
           world.fixedStep()
           renderer.render(scene, camera)
           requestAnimationFrame(frame)
