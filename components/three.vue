@@ -162,9 +162,9 @@ export default {
     const carBody = new THREE.Mesh(
       new THREE.BoxGeometry(3.8, 1.2, 1.6),
       new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.0, // 非光沢度を設定
-        metalness: 1, // 金属感を設定
+        color: 0x000030,
+        roughness: 0.1, // 非光沢度を設定
+        metalness: 0.4, // 金属感を設定
         reflectivity: 1, // 反射率を設定
         transparent: true, // 透明度を有効にする
         envMap: cubeRenderTarget.texture, // 環境マッピングを設定
@@ -195,31 +195,68 @@ export default {
       return hedlight
     }
     const hedlight1 = hedlight() // ヘッドライトを生成
-    hedlight1.position.z = 0.8 // ヘッドライトの位置を調整
-    hedlight1.target.position.z = 0.8 // ヘッドライトの照射先の位置を調整
+    hedlight1.position.z = 0.7 // ヘッドライトの位置を調整
+    hedlight1.target.position.z = 0.5 // ヘッドライトの照射先の位置を調整
     carMeshes.add(hedlight1) // ヘッドライトを車のメッシュに追加
     carMeshes.add(hedlight1.target) // ヘッドライトの照射先を車のメッシュに追加
 
     const hedlight2 = hedlight() // ヘッドライトを生成
-    hedlight2.position.z = -0.8 // ヘッドライトの位置を調整
-    hedlight2.target.position.z = -0.8 // ヘッドライトの照射先の位置を調整
+    hedlight2.position.z = -0.7 // ヘッドライトの位置を調整
+    hedlight2.target.position.z = -0.5 // ヘッドライトの照射先の位置を調整
     carMeshes.add(hedlight2) // ヘッドライトを車のメッシュに追加
     carMeshes.add(hedlight2.target) // ヘッドライトの照射先を車のメッシュに追加
 
-    carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
-    carMeshes.add(new THREE.SpotLightHelper(hedlight2)) // ヘッドライトのヘルパーを追加
+    //carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
+    //carMeshes.add(new THREE.SpotLightHelper(hedlight2)) // ヘッドライトのヘルパーを追加
 
-    /*
-    const hedlightBody = new THREE.RectAreaLight(
-      0xffffff, // ヘッドライトの色を設定
-      100, // 光の強さを設定
-      10, // 幅を設定
-      10, // 高さを設定
-    ) // ヘッドライトのボディを作成
-    hedlightBody.position.set(1.91, 2.2, 0) // 車の前方に配置
-    hedlightBody.lookAt(10, -0.2, 0) // ヘッドライトの照射先を設定
-    carMeshes.add(hedlightBody) // ヘッドライトのボディをシーンに追加
-    */
+    // 光るシリンダーを作成
+    const lightCylinder = () => {
+      const cylinder = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.05, 20),
+        new THREE.MeshStandardMaterial({
+          color: 0x000000, // 色を設定
+          emissive: 0xffffff, // 発光色を設定
+          emissiveIntensity: 1.0, // 発光強度を設定
+        }),
+      )
+      cylinder.castShadow = true // メッシュが影を落とすように設定
+      cylinder.receiveShadow = true // メッシュが影を受け取るように設定
+      cylinder.position.set(-1.91, -0.2, 0) // 車の前方に配置
+      cylinder.rotation.z = Math.PI / 2 // シリンダーを横向きにする
+      return cylinder
+    }
+
+    const lightCylinder1 = lightCylinder() // 光るシリンダーを生成
+    lightCylinder1.position.z = 0.5 // 光るシリンダーの位置を調整
+    carMeshes.add(lightCylinder1) // 光るシリンダーを追加
+
+    const lightCylinder2 = lightCylinder() // 光るシリンダーを生成
+    lightCylinder2.position.z = -0.5 // 光るシリンダーの位置を調整
+    carMeshes.add(lightCylinder2) // 光るシリンダーを追加
+
+    const tailLight = () => {
+      const cylinder = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.05, 20),
+        new THREE.MeshStandardMaterial({
+          color: 0x000000, // 色を赤に設定
+          emissive: 0xff0000, // 発光色を赤に設定
+          emissiveIntensity: 0.3, // 発光強度を設定
+        }),
+      )
+      cylinder.castShadow = true // メッシュが影を落とすように設定
+      cylinder.receiveShadow = true // メッシュが影を受け取るように設定
+      cylinder.position.set(1.91, -0.2, 0) // 車の後方に配置
+      cylinder.rotation.z = Math.PI / 2 // シリンダーを横向きにする
+      return cylinder
+    }
+
+    const tailLight1 = tailLight() // テールライトを生成
+    tailLight1.position.z = 0.5 // テールライトの位置を調整
+    carMeshes.add(tailLight1) // テールライトを追加
+
+    const tailLight2 = tailLight() // テールライトを生成
+    tailLight2.position.z = -0.5 // テールライトの位置を調整
+    carMeshes.add(tailLight2) // テールライトを追加
 
     /** 車体のボディー */
     const car = {
@@ -429,7 +466,7 @@ export default {
     this.container = this.$refs.container
 
     /** 太陽光 */
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 4)
     directionalLight.castShadow = true // 影を有効にする
     directionalLight.shadow.mapSize.width = 2048 // シャドウマップの幅を設定
     directionalLight.shadow.mapSize.height = 2048 // シャドウマップの高さを設定
@@ -439,6 +476,9 @@ export default {
     directionalLight.shadow.camera.bottom = -20
     scene.add(directionalLight)
     scene.add(directionalLight.target) // 光の照射先を追加
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1) // 環境光を追加
+    scene.add(ambientLight)
 
     this.initThree(
       scene,
