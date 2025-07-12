@@ -9,6 +9,12 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { ThreeJSOverlayView } from '@googlemaps/three'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+
 import * as CANNON from 'cannon-es'
 
 export default {
@@ -202,6 +208,18 @@ export default {
 
     carMeshes.add(new THREE.SpotLightHelper(hedlight1)) // ヘッドライトのヘルパーを追加
     carMeshes.add(new THREE.SpotLightHelper(hedlight2)) // ヘッドライトのヘルパーを追加
+
+    /*
+    const hedlightBody = new THREE.RectAreaLight(
+      0xffffff, // ヘッドライトの色を設定
+      100, // 光の強さを設定
+      10, // 幅を設定
+      10, // 高さを設定
+    ) // ヘッドライトのボディを作成
+    hedlightBody.position.set(1.91, 2.2, 0) // 車の前方に配置
+    hedlightBody.lookAt(10, -0.2, 0) // ヘッドライトの照射先を設定
+    carMeshes.add(hedlightBody) // ヘッドライトのボディをシーンに追加
+    */
 
     /** 車体のボディー */
     const car = {
