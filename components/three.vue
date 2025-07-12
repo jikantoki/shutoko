@@ -443,12 +443,16 @@ export default {
                 myVehicle.chassisBody.position.y + forward.y * -1
               this.cameraLookAt.z =
                 myVehicle.chassisBody.position.z + forward.z * -30
+
+              // 太陽光の位置を更新
               this.directionalLightPosition.x =
                 myVehicle.chassisBody.position.x + 20
               this.directionalLightPosition.y =
                 myVehicle.chassisBody.position.y + 20
               this.directionalLightPosition.z =
                 myVehicle.chassisBody.position.z + 20
+
+              // 照射先の位置を更新
               this.directionalLightTarget.x =
                 myVehicle.chassisBody.position.x + -20
               this.directionalLightTarget.y =
@@ -511,10 +515,11 @@ export default {
     directionalLight.castShadow = true // 影を有効にする
     directionalLight.shadow.mapSize.width = 2048 // シャドウマップの幅を設定
     directionalLight.shadow.mapSize.height = 2048 // シャドウマップの高さを設定
-    directionalLight.shadow.camera.right = 20
-    directionalLight.shadow.camera.left = -20
-    directionalLight.shadow.camera.top = 20
-    directionalLight.shadow.camera.bottom = -20
+    directionalLight.shadow.camera.right = 40
+    directionalLight.shadow.camera.left = -40
+    directionalLight.shadow.camera.top = 40
+    directionalLight.shadow.camera.bottom = -40
+    directionalLight.shadow.radius = 2 // シャドウの半径を設定
     scene.add(directionalLight)
     scene.add(directionalLight.target) // 光の照射先を追加
 
